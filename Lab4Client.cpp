@@ -1,18 +1,63 @@
+#define MAXNAMELEN 32
+#define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x501
 
 
 #include <iostream>
 #include <string>
-#include <ws2tcpip.h>
-#include <winsock2.h>
-#include <windows.h>
+#include <WinSock2.h>
+#include <Windows.h>
+#include <Ws2tcpip.h>
+
 #include <iphlpapi.h>
 #include <stdio.h>
 
 #pragma comment (lib, "ws2_32.lib")
 
-#define InetPtonA inet_pton
+//#define InetPtonA inet_pton
 
 using namespace std;
+
+//Protocols
+
+enum ObjectDesc
+{
+Human,
+NonHuman,
+Vehicle,
+StaticObject
+};
+
+enum ObjectForm
+{
+Cube,
+Sphere,
+Pyramid,
+Cone
+};
+
+struct Coordinate
+{
+int x;
+int y;
+};
+
+enum MsgType
+{
+Join, // Client joining game at server
+Leave, // Client leaving game
+Change, // Information to clients
+Event, // Information from clients to server
+TextMessage // Send text messages to one or all
+};
+
+struct MsgHead
+{
+unsigned int length; // Total length for whole message
+unsigned int seq_no; // Sequence number
+unsigned int id; // Client ID or 0;
+MsgType type; // Type of message
+};
 
 int main()
 {
@@ -32,7 +77,7 @@ int main()
         return -1;
     }
 
-    cerr << "wsOk" << endl;
+    cerr << "wsOk " << wsOk << endl;
 
     // Fill in a hint structure
     /*
@@ -52,6 +97,7 @@ int main()
     hints.ai_protocol = IPPROTO_TCP;
 
     #define DEFAULT_PORT "49152"
+    cout << "structure created \n";
 
     // Resolve the server address and port
     int iResult = getaddrinfo(IPaddr.c_str(), DEFAULT_PORT, &hints, &result);
@@ -60,6 +106,7 @@ int main()
         WSACleanup();
         return 1;
     }
+    cout << "ip and port information converted to bytes\n";
 
     //create socket
     /*
@@ -86,24 +133,23 @@ int main()
     WSACleanup();
     return 1;
     }
-     cout << "socket har suttit upp ip o port";
+     cout << "socket har suttit upp ip o port\n";
 
     //Connect to the server
     int connResult = connect(sock, ptr->ai_addr, (int)ptr->ai_addrlen);
 
+
     //valid
-    if(connResult = SOCKET_ERROR)
+    if(connResult == SOCKET_ERROR)
     {
         cerr << "Cant connect to server, err #" << WSAGetLastError() << endl;
         closesocket(sock);
         sock = INVALID_SOCKET;
         WSACleanup();
     }
-
-    // Should really try the next address returned by getaddrinfo
-    // if the connect call failed
-    // But for this simple example we just free the resources
-    // returned by getaddrinfo and print an error message
+    else {
+        cout << "Connected\n";
+    }
 
     freeaddrinfo(result);
 
@@ -114,19 +160,78 @@ int main()
     }
     cout << "conn gick igenom";
 
+    struct JoinMsg
+    {
+    MsgHead head;
+    ObjectDesc desc;
+    ObjectForm form;
+    char name[MAXNAMELEN]; // nullterminated!, or empty
+    };
 
     //loop to send and recieve messages
-    //char buff[4096];
-    //string userInput = "hello";
+    char buf[4096];
+    char* buffer = new char[sizeof(JoinMsg)];
+    string userInput;
 
-    //int sendResult = send(sock, userInput.c_str(), userInput.size() + 1,0);
+    do
+    {
+        //prompt user for some text
+        cout << "> ";
+        getline(cin, userInput);
+
+        if(userInput.size() > 0)
+        {
+
+            int sendResult;
+            if(userInput == "1")
+            {
+                MsgType type;
+                type = Join;    //enum msg tpe with value 0 ie join.
+                MsgHead head;
+                head.length = 4096;
+                head.seq_no = 1;
+                head.id = 2;
+                head.type = type;
+
+                ObjectDesc desc;
+                desc = Human;
+                ObjectForm form;
+                form = Cube;
+
+                JoinMsg join;
+                join.head = head;
+                join.desc = desc;
+                join.form = form;
 
 
-    //close listening socket
+                // Fixa att packetera ner structen till en char* buffer för att kunna skicka den till server
+                //memcpy(buffer, &join, sizeof(join));
 
-    //loop messages between client and server
+                sendResult = send(sock, join, sizeof(join), 0);
+            }
+            //send text
+            sendResult = send(sock,userInput.c_str(), userInput.size()+1,0);
+
+            if(sendResult != SOCKET_ERROR)
+            {
+                //wait for response
+                ZeroMemory(buf, 4096);
+                int byteReceived = recv(sock, buf, 4096, 0);
+                //if we get something
+                if(byteReceived  > 0) {
+                    //echo response
+                    cout << "Server " << string(buf, 0, byteReceived) << endl;
+                }
+            }
+        }
+        //wait for response
+        //echo respons
+    } while(userInput.size() > 0);
+
 
     //shutdown winsock
+    closesocket(sock);
+    WSACleanup();
 
     return 1;
 }
