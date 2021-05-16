@@ -20,7 +20,6 @@ int main()
     string IPaddr = "130.240.40.7";
     int serverPort = 49152;
 
-    cout << "test";
     //init winsock
     WSADATA wsData;
 
@@ -33,7 +32,7 @@ int main()
         return -1;
     }
 
-    cerr << "nya wsOk" << endl;
+    cerr << "wsOk" << endl;
 
     // Fill in a hint structure
     /*
@@ -90,11 +89,9 @@ int main()
      cout << "socket har suttit upp ip o port";
 
     //Connect to the server
-    int connResult = connect(sock, ptr->ai_addr, ptr->ai_addrlen);
+    int connResult = connect(sock, ptr->ai_addr, (int)ptr->ai_addrlen);
 
     //valid
-
-    // Connect to server.
     if(connResult = SOCKET_ERROR)
     {
         cerr << "Cant connect to server, err #" << WSAGetLastError() << endl;
@@ -115,6 +112,7 @@ int main()
         WSACleanup();
         return 1;
     }
+    cout << "conn gick igenom";
 
 
     //loop to send and recieve messages
