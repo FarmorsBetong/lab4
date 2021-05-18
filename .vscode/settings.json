@@ -41,6 +41,11 @@
         "xstddef": "cpp",
         "xstring": "cpp",
         "xtr1common": "cpp",
-        "xutility": "cpp"
-    }
+        "xutility": "cpp",
+        "winsock2.h": "c"
+    },
+    "java.project.sourcePaths": [
+        "Labb3Net/src/connection",
+        "connection"
+    ]
 }

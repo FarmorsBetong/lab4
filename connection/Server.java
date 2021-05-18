@@ -1,7 +1,3 @@
-package connection;
-
-import data.PanelData;
-import gui.GUI;
 
 import java.io.IOException;
 import java.net.*;

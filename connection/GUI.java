@@ -1,6 +1,4 @@
-package gui;
 
-import data.PanelData;
 
 import javax.swing.*;
 import java.awt.*;

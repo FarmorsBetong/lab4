@@ -1,11 +1,10 @@
-package gui;
-
-import data.PanelData;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.util.Observable;
 import java.util.Observer;
+
+import javax.swing.JPanel;
 
 /**
  * GamePanel class represents a game panel.
@@ -42,8 +41,6 @@ public class GamePanel extends JPanel implements Observer {
         this.setBackground(Color.WHITE);
 
     }
-
-
     /**
      * After the observable changes this method will be called and calls the method repaint(), which calls
      * paintComponent(Graphics g).

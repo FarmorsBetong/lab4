@@ -2,7 +2,10 @@
 #define WIN32_LEAN_AND_MEAN
 #define _WIN32_WINNT 0x501
 
+#define DEFAULT_PORT "49152"
 
+#include "protocol.cpp"
+#include "Playground.cpp"
 #include <iostream>
 #include <string>
 #include <WinSock2.h>
@@ -15,53 +18,19 @@
 #pragma comment (lib, "ws2_32.lib")
 
 //#define InetPtonA inet_pton
+#define BUFLEN 512	//Max length of buffer
 
 using namespace std;
 
-//Protocols
 
-enum ObjectDesc
-{
-Human,
-NonHuman,
-Vehicle,
-StaticObject
-};
-
-enum ObjectForm
-{
-Cube,
-Sphere,
-Pyramid,
-Cone
-};
-
-struct Coordinate
-{
-int x;
-int y;
-};
-
-enum MsgType
-{
-Join, // Client joining game at server
-Leave, // Client leaving game
-Change, // Information to clients
-Event, // Information from clients to server
-TextMessage // Send text messages to one or all
-};
-
-struct MsgHead
-{
-unsigned int length; // Total length for whole message
-unsigned int seq_no; // Sequence number
-unsigned int id; // Client ID or 0;
-MsgType type; // Type of message
-};
 
 int main()
 {
 
+    playground gameClient;
+
+    gameClient.startSending();    
+    /*
     string IPaddr = "130.240.40.7";
     int serverPort = 49152;
 
@@ -79,14 +48,6 @@ int main()
 
     cerr << "wsOk " << wsOk << endl;
 
-    // Fill in a hint structure
-    /*
-    sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(serverPort);
-    inet_pton(AF_INET, IPaddr.c_str(), &hint.sin_addr);
-
-    */
    struct addrinfo *result = NULL,
                 *ptr = NULL,
                 hints;
@@ -96,7 +57,6 @@ int main()
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
-    #define DEFAULT_PORT "49152"
     cout << "structure created \n";
 
     // Resolve the server address and port
@@ -108,15 +68,6 @@ int main()
     }
     cout << "ip and port information converted to bytes\n";
 
-    //create socket
-    /*
-    SOCKET sock = socket(AF_INET, SOCK_STREAM,0);
-    if(sock == INVALID_SOCKET)
-    {
-        cout << "Can't create a socket quitting";
-        WSACleanup();
-        return -1;
-    }*/
 
     // Attempt to connect to the first address returned by
     // the call to getaddrinfo
@@ -160,19 +111,13 @@ int main()
     }
     cout << "conn gick igenom";
 
-    struct JoinMsg
-    {
-    MsgHead head;
-    ObjectDesc desc;
-    ObjectForm form;
-    char name[MAXNAMELEN]; // nullterminated!, or empty
-    };
-
     //loop to send and recieve messages
     char buf[4096];
     char* buffer = new char[sizeof(JoinMsg)];
     string userInput;
 
+    */
+    /*
     do
     {
         //prompt user for some text
@@ -227,11 +172,12 @@ int main()
         //wait for response
         //echo respons
     } while(userInput.size() > 0);
+    
 
 
     //shutdown winsock
     closesocket(sock);
     WSACleanup();
-
+    */
     return 1;
 }
