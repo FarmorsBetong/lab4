@@ -2,15 +2,18 @@
 #define WIN32_LEAN_AND_MEAN
 #define _WIN32_WINNT 0x501
 
-#define DEFAULT_PORT "49152"
+
 
 #include "protocol.cpp"
 #include "Playground.cpp"
+#include "ServerConnection.cpp"
 #include <iostream>
 #include <string>
 #include <WinSock2.h>
 #include <Windows.h>
 #include <Ws2tcpip.h>
+#include <chrono>
+#include <thread>
 
 #include <iphlpapi.h>
 #include <stdio.h>
@@ -26,13 +29,21 @@ using namespace std;
 
 int main()
 {
+/*
+    Playground gameClient;
 
-    playground gameClient;
+    gameClient.placePlayer(3,3,"red");
 
-    gameClient.startSending();    
-    /*
+    Sleep(2000);
+    gameClient.move(3,3,1,1,"red");
+    */
+
+    ServerConnection con;
+
+
+    /**
     string IPaddr = "130.240.40.7";
-    int serverPort = 49152;
+    string serverPort = "49152";
 
     //init winsock
     WSADATA wsData;
@@ -60,7 +71,7 @@ int main()
     cout << "structure created \n";
 
     // Resolve the server address and port
-    int iResult = getaddrinfo(IPaddr.c_str(), DEFAULT_PORT, &hints, &result);
+    int iResult = getaddrinfo(IPaddr.c_str(), serverPort.c_str(), &hints, &result);
     if (iResult != 0) {
         printf("getaddrinfo failed: %d\n", iResult);
         WSACleanup();
@@ -115,8 +126,8 @@ int main()
     char buf[4096];
     char* buffer = new char[sizeof(JoinMsg)];
     string userInput;
-
-    */
+*/
+    
     /*
     do
     {
@@ -172,8 +183,6 @@ int main()
         //wait for response
         //echo respons
     } while(userInput.size() > 0);
-    
-
 
     //shutdown winsock
     closesocket(sock);

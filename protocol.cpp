@@ -40,10 +40,34 @@ unsigned int id; // Client ID or 0;
 MsgType type; // Type of message
 };
 
- struct JoinMsg
-    {
-    MsgHead head;
-    ObjectDesc desc;
-    ObjectForm form;
-    char name[MAXNAMELEN]; // nullterminated!, or empty
-    };
+struct JoinMsg
+{
+MsgHead head;
+ObjectDesc desc;
+ObjectForm form;
+char name[MAXNAMELEN]; // nullterminated!, or empty
+};
+
+enum EventType
+{
+Move
+};
+
+struct EventMsg
+{
+MsgHead head;
+EventType type;
+};
+
+struct MoveEvent
+{
+EventMsg event;
+Coordinate pos; //New object position
+Coordinate dir; //New object direction
+};
+
+struct TextMessageMsg // Optional at client side!!!
+{
+MsgHead head;
+char text[1]; // NULL-terminerad array av chars.
+};
