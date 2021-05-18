@@ -161,9 +161,7 @@ int main()
 
 
                 // Fixa att packetera ner structen till en char* buffer för att kunna skicka den till server
-                //memcpy(buffer, &join, sizeof(join));
-
-                sendResult = send(sock, join, sizeof(join), 0);
+                
             }
             //send text
             sendResult = send(sock,userInput.c_str(), userInput.size()+1,0);

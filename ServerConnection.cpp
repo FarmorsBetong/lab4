@@ -5,6 +5,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define _WIN32_WINNT 0x501
 
+
 #include <iostream>
 #include <string>
 #include <WinSock2.h>
@@ -41,6 +42,9 @@ class ServerConnection
 
     string IPaddr = "130.240.40.7";
     string port = "49152";
+
+    //Messages
+   
 
     public:
     //constructor
@@ -103,7 +107,7 @@ class ServerConnection
         if(connResult == SOCKET_ERROR)
         {
             cerr << "Cant connect to server, err #" << WSAGetLastError() << endl;
-            closesocket(sock);
+            closesocket(TCPSocket);
             TCPSocket = INVALID_SOCKET;
             WSACleanup();
         }
@@ -115,9 +119,45 @@ class ServerConnection
             WSACleanup();
             return;
         }
-        cout << "Connected";
+        cout << "Connected\n";
 
-        int iRecieve = recv(TCPSocket,)
+        createJoinMsg();
+
+        int iRecieve = recv(TCPSocket,recvMessage,recvlen,0);
+        if(iRecieve = SOCKET_ERROR)
+        {
+            std::cout << "recv() error" << WSAGetLastError() << std::endl;
+        }
+        else 
+        {
+            std::cout << "Data recieved :" << recvMessage << std::endl;
+        }
     };
+
+    int createJoinMsg()
+    {
+                JoinMsg join;
+                MsgType type;
+                type = Join;    //enum msg tpe with value 0 ie join.
+                
+                MsgHead head;
+                head.length = sizeof(join);
+                head.seq_no = 1;
+                head.id = 2;
+                head.type = type;
+
+                ObjectDesc desc;
+                desc = Human;
+                ObjectForm form;
+                form = Cube;
+
+                join.head = head;
+                join.desc = desc;
+                join.form = form;
+
+                 memcpy((void*)sendMessage, (void*)&join, sizeof(join));
+                 send(TCPSocket,sendMessage,sizeof(sendMessage),0);
+                 std::cout << "sending join msg" << std::endl;
+    }
 
 };
