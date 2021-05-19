@@ -69,7 +69,6 @@ class ServerConnection
         hints.ai_socktype = SOCK_STREAM;
         hints.ai_protocol = IPPROTO_TCP;
 
-        cout << "structure created \n";
 
         // Resolve the server address and port
         int iResult = getaddrinfo(IPaddr.c_str(), port.c_str(), &hints, &result);
@@ -78,27 +77,23 @@ class ServerConnection
             WSACleanup();
             return;
         }
-        cout << "ip and port information converted to bytes\n";
-
 
         // Attempt to connect to the first address returned by
         // the call to getaddrinfo
         ptr=result;
 
-       
         // Create a SOCKET for connecting to server
         TCPSocket = socket(ptr->ai_family, ptr->ai_socktype,
             ptr->ai_protocol);
 
-        if (TCPSocket == INVALID_SOCKET) 
+        if (TCPSocket == INVALID_SOCKET)
         {
             printf("Error at socket(): %ld\n", WSAGetLastError());
             freeaddrinfo(result);
             WSACleanup();
             return;
         }
-        cout << "ip and port setup\n";
-
+        cout << "TCP socket created";
         //Connect to the server
         int connResult = connect(TCPSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
 
@@ -128,18 +123,17 @@ class ServerConnection
         {
             std::cout << "recv() error" << WSAGetLastError() << std::endl;
         }
-        else 
+        else
         {
             std::cout << "Data recieved :" << recvMessage << std::endl;
         }
     };
 
-    int createJoinMsg()
+    void createJoinMsg()
     {
                 JoinMsg join;
                 MsgType type;
                 type = Join;    //enum msg tpe with value 0 ie join.
-                
                 MsgHead head;
                 head.length = sizeof(join);
                 head.seq_no = 1;

@@ -4,7 +4,7 @@
 
 
 
-#include "protocol.cpp"
+#include "GameProtocol.cpp"
 #include "Playground.cpp"
 #include "ServerConnection.cpp"
 #include <iostream>
@@ -14,177 +14,100 @@
 #include <Ws2tcpip.h>
 #include <chrono>
 #include <thread>
-
 #include <iphlpapi.h>
 #include <stdio.h>
+#include <conio.h>
+
 
 #pragma comment (lib, "ws2_32.lib")
 
 //#define InetPtonA inet_pton
 #define BUFLEN 512	//Max length of buffer
+#define KEY_UP 72
+#define KEY_DOWN 80
+#define KEY_LEFT 75
+#define KEY_RIGHT 77
 
 using namespace std;
 
+Playground gameClient;
 
+bool gameStarted = false;
+Coordinate pos;
+string playerColor;
 
+void keyInput()
+{
+    int c = 0;
+    int y;
+    int x;
+    while(1)
+    {
+        switch(c = getch())
+        {
+            case KEY_UP:
+                cout << "Up\n";
+                y = pos.y -1;
+                if(y > -1) 
+                {
+                    pos.y = y;
+                    gameClient.move(pos,playerColor);
+                }
+                break;
+            case KEY_DOWN:
+                cout << "down\n";
+                y = pos.y + 1;
+                if(y < 100) 
+                {
+                    pos.y = y;
+                    gameClient.move(pos,playerColor);
+                }
+                break;
+            case KEY_LEFT:
+                cout << "left\n";
+                x = pos.x -1;
+                if(x > -1) 
+                {
+                    pos.x = x;
+                    gameClient.move(pos,playerColor);
+                }
+                break;
+            case KEY_RIGHT:
+                cout << "right\n";
+                x = pos.x + 1;
+                if(x < 100) 
+                {
+                    pos.x = x;
+                    gameClient.move(pos,playerColor);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
 int main()
 {
-/*
-    Playground gameClient;
 
-    gameClient.placePlayer(3,3,"red");
+    gameClient.clearBoard();
+    playerColor = "red";
+    pos.x = 3;
+    pos.y = 3;
+    gameClient.placePlayer(pos,"red");
+    gameStarted = true;
 
-    Sleep(2000);
-    gameClient.move(3,3,1,1,"red");
-    */
-
-    ServerConnection con;
-
-
-    /**
-    string IPaddr = "130.240.40.7";
-    string serverPort = "49152";
-
-    //init winsock
-    WSADATA wsData;
-
-    WORD version = MAKEWORD(2,2);
-
-    int wsOk = WSAStartup(version,&wsData);
-    if(wsOk != 0)
-    {
-        cerr << "winsock startup failed" << endl;
-        return -1;
-    }
-
-    cerr << "wsOk " << wsOk << endl;
-
-   struct addrinfo *result = NULL,
-                *ptr = NULL,
-                hints;
-
-    ZeroMemory( &hints, sizeof(hints) );
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-
-    cout << "structure created \n";
-
-    // Resolve the server address and port
-    int iResult = getaddrinfo(IPaddr.c_str(), serverPort.c_str(), &hints, &result);
-    if (iResult != 0) {
-        printf("getaddrinfo failed: %d\n", iResult);
-        WSACleanup();
-        return 1;
-    }
-    cout << "ip and port information converted to bytes\n";
+    keyInput();
+    //std::thread first (keyInput);
 
 
-    // Attempt to connect to the first address returned by
-    // the call to getaddrinfo
-    ptr=result;
+    //first.join();
 
-    SOCKET sock = INVALID_SOCKET;
-    // Create a SOCKET for connecting to server
-    sock = socket(ptr->ai_family, ptr->ai_socktype,
-        ptr->ai_protocol);
-
-    if (sock == INVALID_SOCKET) {
-    printf("Error at socket(): %ld\n", WSAGetLastError());
-    freeaddrinfo(result);
-    WSACleanup();
-    return 1;
-    }
-     cout << "socket har suttit upp ip o port\n";
-
-    //Connect to the server
-    int connResult = connect(sock, ptr->ai_addr, (int)ptr->ai_addrlen);
+    //Sleep(2000);
+    //gameClient.move(3,3,1,1,"red");
 
 
-    //valid
-    if(connResult == SOCKET_ERROR)
-    {
-        cerr << "Cant connect to server, err #" << WSAGetLastError() << endl;
-        closesocket(sock);
-        sock = INVALID_SOCKET;
-        WSACleanup();
-    }
-    else {
-        cout << "Connected\n";
-    }
-
-    freeaddrinfo(result);
-
-    if (sock == INVALID_SOCKET) {
-        printf("Unable to connect to server!\n");
-        WSACleanup();
-        return 1;
-    }
-    cout << "conn gick igenom";
-
-    //loop to send and recieve messages
-    char buf[4096];
-    char* buffer = new char[sizeof(JoinMsg)];
-    string userInput;
-*/
-    
-    /*
-    do
-    {
-        //prompt user for some text
-        cout << "> ";
-        getline(cin, userInput);
-
-        if(userInput.size() > 0)
-        {
-
-            int sendResult;
-            if(userInput == "1")
-            {
-                MsgType type;
-                type = Join;    //enum msg tpe with value 0 ie join.
-                MsgHead head;
-                head.length = 4096;
-                head.seq_no = 1;
-                head.id = 2;
-                head.type = type;
-
-                ObjectDesc desc;
-                desc = Human;
-                ObjectForm form;
-                form = Cube;
-
-                JoinMsg join;
-                join.head = head;
-                join.desc = desc;
-                join.form = form;
+    //ServerConnection con;
 
 
-                // Fixa att packetera ner structen till en char* buffer för att kunna skicka den till server
-                
-            }
-            //send text
-            sendResult = send(sock,userInput.c_str(), userInput.size()+1,0);
-
-            if(sendResult != SOCKET_ERROR)
-            {
-                //wait for response
-                ZeroMemory(buf, 4096);
-                int byteReceived = recv(sock, buf, 4096, 0);
-                //if we get something
-                if(byteReceived  > 0) {
-                    //echo response
-                    cout << "Server " << string(buf, 0, byteReceived) << endl;
-                }
-            }
-        }
-        //wait for response
-        //echo respons
-    } while(userInput.size() > 0);
-
-    //shutdown winsock
-    closesocket(sock);
-    WSACleanup();
-    */
     return 1;
 }

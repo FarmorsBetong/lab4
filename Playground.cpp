@@ -15,6 +15,7 @@
 #include <iphlpapi.h>
 #include <stdio.h>
 
+
 #define InetPtonA inet_pton
 
 using namespace std;
@@ -26,173 +27,213 @@ using namespace std;
 class Playground
 {
     public:
-    SOCKET sock;
-    sockaddr_in server;
-    int slen=sizeof(server);
+        //variables
+        SOCKET sock;
+        sockaddr_in server;
+        int slen=sizeof(server);
 
-    sockaddr_in clientRecHint;
-    int crlen = sizeof(clientRecHint);
+        sockaddr_in clientRecHint;
+        int crlen = sizeof(clientRecHint);
 
-    sockaddr_in clientIn;
-    int clen=sizeof(clientIn);
-    SOCKET recSock;
+        sockaddr_in clientIn;
+        int clen=sizeof(clientIn);
+        SOCKET recSock;
 
-    //Winsock startup
-    WSADATA wsData;
-    WORD version = MAKEWORD(2,2);
+
+        //Winsock startup
+        WSADATA wsData;
+        WORD version = MAKEWORD(2,2);
+
+
+        Coordinate pos;
+        char buf[BUFLEN];
 
     public:
-    Playground()
-    {
-        int wsOk = WSAStartup(version,&wsData);
-        if(wsOk != 0)
+        //construtor for con with gui server
+        Playground()
         {
-            std::cout << "winsock startup failed" << std::endl;
-        }
-
-        //setup address structure
-        server.sin_family = AF_INET;
-        server.sin_port = htons(PORT);
-        server.sin_addr.S_un.S_addr = inet_addr(LOOPBACK);
-
-        // Create a SOCKET for connecting to server
-        sock = socket(AF_INET,SOCK_DGRAM,0);
-
-        //error check for socket creation
-        if (sock == INVALID_SOCKET)
-        {
-            printf("Error at socket(): %ld\n", WSAGetLastError());
-            WSACleanup();
-        }
-
-        std::cout << "UDP socket created \n";
-    }
-
-    int startSending()
-    {
-        while(1)
-        {
-            char buf[BUFLEN];
-            std::string userInput;
-
-            //prompt user for some text
-            std::cout << ">";
-            std::getline(std::cin, userInput);
-
-            //send message
-            if(sendto(sock, userInput.c_str() ,strlen(userInput.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
+            int wsOk = WSAStartup(version,&wsData);
+            if(wsOk != 0)
             {
-                printf("sendto() failed with error code : %d" , WSAGetLastError());
-			    exit(EXIT_FAILURE);
+                std::cout << "winsock startup failed" << std::endl;
             }
 
-            //socket
-            if(recSock= socket(AF_INET,SOCK_DGRAM,0) == SOCKET_ERROR)
+            //setup address structure
+            server.sin_family = AF_INET;
+            server.sin_port = htons(PORT);
+            server.sin_addr.S_un.S_addr = inet_addr(LOOPBACK);
+
+            // Create a SOCKET for connecting to server
+            sock = socket(AF_INET,SOCK_DGRAM,0);
+
+            //error check for socket creation
+            if (sock == INVALID_SOCKET)
             {
-                std::cout << "rec socket didnt get created";
+                printf("Error at socket(): %ld\n", WSAGetLastError());
                 WSACleanup();
             }
 
-
-            ZeroMemory(buf,BUFLEN);
-
-            int bytesIn = recvfrom(sock,buf,BUFLEN,0, (sockaddr *)&clientIn, &clen);
-
-            if(bytesIn == SOCKET_ERROR)
-            {
-                std::cout << "Errorr rec from client " << WSAGetLastError << std::endl;
-                //WSACleanup();
-            }
-
-
-            std::cout << "msg: " << buf << std::endl;
-
-
-            //close socket
+            std::cout << "UDP socket created \n";
         }
-    }
 
-    // protocol to move character on the server board is x:y:color
-
-    int move(int fromx, int fromy, int tox, int toy, string color)
+        // Helper function for testing server gui
+        int startSending()
         {
-            char buf[BUFLEN];
-            string moveFrom =  to_string(fromx) + ":" + to_string(fromy) + ":" + "white";
-
-            //send message
-            if(sendto(sock, moveFrom.c_str() ,strlen(moveFrom.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
+            while(1)
             {
-                printf("sendto() failed with error code : %d" , WSAGetLastError());
-			    exit(EXIT_FAILURE);
+                string userInput;
+
+                //prompt user for some text
+                cout << ">";
+                getline(std::cin, userInput);
+
+                //send message
+                if(sendto(sock, userInput.c_str() ,strlen(userInput.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
+                {
+                    printf("sendto() failed with error code : %d" , WSAGetLastError());
+                    exit(EXIT_FAILURE);
+                }
+
+                //socket
+                if(recSock= socket(AF_INET,SOCK_DGRAM,0) == SOCKET_ERROR)
+                {
+                    std::cout << "rec socket didnt get created";
+                    WSACleanup();
+                }
+
+
+                ZeroMemory(buf,BUFLEN);
+
+                int bytesIn = recvfrom(sock,buf,BUFLEN,0, (sockaddr *)&clientIn, &clen);
+
+                if(bytesIn == SOCKET_ERROR)
+                {
+                    std::cout << "Errorr rec from client " << WSAGetLastError << std::endl;
+                    //WSACleanup();
+                }
+
+
+                std::cout << "msg: " << buf << std::endl;
+
+
+                //close socket
             }
-            //clear buffer
-            ZeroMemory(buf,BUFLEN);
-
-            //recieve information from gui server
-            int bytesIn = recvfrom(sock,buf,BUFLEN,0, (sockaddr *)&clientIn, &clen);
-
-            if(bytesIn == SOCKET_ERROR)
-            {
-                std::cout << "Errorr rec from client " << WSAGetLastError << std::endl;
-            }
-
-            // print out recv msg
-            cout << "msg: " << buf << endl;
-
-            string moveTo = to_string(tox) + ":" + to_string(toy) + ":" + color;
-
-            //send message
-            if(sendto(sock, moveTo.c_str() ,strlen(moveTo.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
-            {
-                printf("sendto() failed with error code : %d" , WSAGetLastError());
-			    exit(EXIT_FAILURE);
-            }
-            //clear buffer
-            ZeroMemory(buf,BUFLEN);
-
-            //recieve information from gui server
-            bytesIn = recvfrom(sock,buf,BUFLEN,0, (sockaddr *)&clientIn, &clen);
-
-            if(bytesIn == SOCKET_ERROR)
-            {
-                std::cout << "Errorr rec from client " << WSAGetLastError << std::endl;
-            }
-
-            // print out recv msg
-            cout << "msg: " << buf << endl;
         }
 
-
-        int placePlayer(int x, int y, string color)
+        // Clears the board
+        void clearBoard()
         {
-            char buf[BUFLEN];
-            string place =  to_string(x) + ":" + to_string(y) + ":" + color;
-
+            string clear = "clear";
             //send message
-            if(sendto(sock, place.c_str() ,strlen(place.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
-            {
-                printf("sendto() failed with error code : %d" , WSAGetLastError());
-			    exit(EXIT_FAILURE);
-            }
-            //clear buffer
-            ZeroMemory(buf,BUFLEN);
+                if(sendto(sock, clear.c_str() ,strlen(clear.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
+                {
+                    printf("sendto() failed with error code : %d" , WSAGetLastError());
+                    exit(EXIT_FAILURE);
+                }
+                //clear buffer
+                ZeroMemory(buf,BUFLEN);
 
-            //recieve information from gui server
-            int bytesIn = recvfrom(sock,buf,BUFLEN,0, (sockaddr *)&clientIn, &clen);
+                //recieve information from gui server
+                int bytesIn = recvfrom(sock,buf,BUFLEN,0, (sockaddr *)&clientIn, &clen);
 
-            if(bytesIn == SOCKET_ERROR)
-            {
-                cout << "Errorr rec from client " << WSAGetLastError << endl;
-            }
+                if(bytesIn == SOCKET_ERROR)
+                {
+                    std::cout << "Errorr rec from client " << WSAGetLastError << std::endl;
+                }
 
-            // print out recv msg
-            cout << "msg: " << buf << endl;
+                // print out recv msg
+                cout << "msg: " << buf << endl;
         }
 
-        // closes the socket and and cleansup winsock
-        int closeSocket(SOCKET sock)
-        {
-           // close(sock);
-            WSACleanup();
-        }
+        // protocol to move character on the server board is x:y:color
+
+        void move(Coordinate newPos, string color)
+            {
+                string moveFrom =  to_string(pos.x) + ":" + to_string(pos.y) + ":" + "white";
+
+                //send message
+                if(sendto(sock, moveFrom.c_str() ,strlen(moveFrom.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
+                {
+                    printf("sendto() failed with error code : %d" , WSAGetLastError());
+                    exit(EXIT_FAILURE);
+                    return;
+                }
+                //clear buffer
+                ZeroMemory(buf,BUFLEN);
+
+                //recieve information from gui server
+                int bytesIn = recvfrom(sock,buf,BUFLEN,0, (sockaddr *)&clientIn, &clen);
+
+                if(bytesIn == SOCKET_ERROR)
+                {
+                    std::cout << "Errorr rec from client " << WSAGetLastError << std::endl;
+                    return;
+                }
+
+                // print out recv msg
+                cout << "msg: " << buf << endl;
+
+                string moveTo = to_string(newPos.x) + ":" + to_string(newPos.y) + ":" + color;
+
+                //send message
+                if(sendto(sock, moveTo.c_str() ,strlen(moveTo.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
+                {
+                    printf("sendto() failed with error code : %d" , WSAGetLastError());
+                    exit(EXIT_FAILURE);
+                    return;
+                }
+                //clear buffer
+                ZeroMemory(buf,BUFLEN);
+
+                //recieve information from gui server
+                bytesIn = recvfrom(sock,buf,BUFLEN,0, (sockaddr *)&clientIn, &clen);
+
+                if(bytesIn == SOCKET_ERROR)
+                {
+                    std::cout << "Errorr rec from client " << WSAGetLastError << std::endl;
+                    return;
+                }
+
+                // print out recv msg
+                cout << "msg: " << buf << endl;
+                pos.x = newPos.x;
+                pos.y = newPos.y;
+            }
+
+
+            void placePlayer(Coordinate firstPos, string color)
+            {
+                char buf[BUFLEN];
+                pos.x = firstPos.x;
+                pos.y =firstPos.y;
+                string place =  to_string(pos.x) + ":" + to_string(pos.y) + ":" + color;
+
+                //send message
+                if(sendto(sock, place.c_str() ,strlen(place.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
+                {
+                    printf("sendto() failed with error code : %d" , WSAGetLastError());
+                    exit(EXIT_FAILURE);
+                }
+                //clear buffer
+                ZeroMemory(buf,BUFLEN);
+
+                //recieve information from gui server
+                int bytesIn = recvfrom(sock,buf,BUFLEN,0, (sockaddr *)&clientIn, &clen);
+
+                if(bytesIn == SOCKET_ERROR)
+                {
+                    cout << "Errorr rec from client " << WSAGetLastError << endl;
+                }
+
+                // print out recv msg
+                cout << "msg: " << buf << endl;
+            }
+            /*
+            // closes the socket and and cleansup winsock
+            void closeSocket()
+            {
+                closeSocket(sock);
+                WSACleanup();
+                return;
+            }*/
 };
