@@ -146,16 +146,17 @@ void sendChangePos()
 */
 int main()
 {
-
-    gameClient.clearBoard();
+    
+    //gameClient.clearBoard();
     pos.x = 3;
     pos.y = 3;
-    playerColor = "red";
-    gameClient.placePlayer(pos,playerColor);
-    gameStarted = true;
+    //playerColor = "red";
+    //gameClient.placePlayer(pos,playerColor);
+    //gameStarted = true;
 
-    keyInput();
-    //std::thread first (keyInput);
+
+    //keyInput();
+   
 
 
     //first.join();
@@ -164,8 +165,14 @@ int main()
     //gameClient.move(3,3,1,1,"red");
 
 
-    //ServerConnection con;
+    ServerConnection con;
 
+    //std::thread sendInfo(con.recieveInformation);
+    con.recieveInformation();
+    //con.sendMoveMessage(0,4,pos);
+    
+    //con.recieveInformation();
+    //std::thread first (con.);
 
     return 1;
 }

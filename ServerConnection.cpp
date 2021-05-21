@@ -42,7 +42,8 @@ class ServerConnection
 
     string IPaddr = "130.240.40.7";
     string port = "49152";
-
+    int thisPlayerID = 0;
+    int seq_nr;
     //Messages
    
 
@@ -93,7 +94,7 @@ class ServerConnection
             WSACleanup();
             return;
         }
-        cout << "TCP socket created";
+        cout << "TCP socket created\n";
         //Connect to the server
         int connResult = connect(TCPSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
 
@@ -118,16 +119,171 @@ class ServerConnection
 
         createJoinMsg();
 
-        int iRecieve = recv(TCPSocket,recvMessage,recvlen,0);
-        if(iRecieve = SOCKET_ERROR)
-        {
-            std::cout << "recv() error" << WSAGetLastError() << std::endl;
-        }
-        else
-        {
-            std::cout << "Data recieved :" << recvMessage << std::endl;
-        }
+        cout << "End of constructor\n";
     };
+
+    void recieveInformation()
+    {
+        char recvBuf[BUFLEN];
+        while(true)
+        {
+            int iRecieve = recv(TCPSocket,recvBuf,BUFLEN,0);
+            if(iRecieve == SOCKET_ERROR)
+            {
+                std::cout << "recv() error " << WSAGetLastError() << std::endl;
+            }
+            else
+            {
+                //remove the struct from the buffer
+                MsgHead* head = (MsgHead*)recvBuf;
+                std::cout << "Got packet with playerID: " << head->id << std::endl;
+                cout << "seq_nr : " << head->seq_no << endl;
+                seq_nr = head->seq_no;
+                cout << "type : " << head->type << endl;
+                // when player joins setup id
+                if (head->type == Join) 
+                {
+                    if (thisPlayerID == 0) 
+                    {
+                        std::cout << "Player join the game\n";
+                        thisPlayerID = head->id;
+                    }
+                }
+            }
+        }
+    }
+
+    void receiveInfo(int seqNum) {
+	char recvBuf[BUFLEN];
+	int receive;
+
+	while (true) {
+
+		receive = recv(TCPSocket, recvBuf, BUFLEN, 0);
+        if(receive == SOCKET_ERROR)
+        {
+            cout << "fail";
+        }
+		MsgHead* head = (MsgHead*)recvBuf;
+		std::cout << "Got packet with playerID: " << head->id << std::endl;
+        cout << "type : " << head->seq_no << endl;
+		int ID = head->id;
+
+		if (head->type == Join) {
+			
+			if (thisPlayerID == 0) {
+				std::cout << "Join";
+				thisPlayerID = head->id;
+			}
+			
+			
+		}
+
+		if (head->type == Leave) {
+			std::cout << "Leave";
+
+
+		}
+        /*
+		if (head->type == Event) {
+			std::cout << "Event";
+
+			if (head->type == Move) {
+				std::cout << "Move";
+
+			}
+
+
+		}*/
+
+		
+
+		/*if (head->type == Change) {
+			std::cout << "Change" << std::endl;
+			ChangeMsg* change = (ChangeMsg*)head;
+			NewPlayerPositionMsg* NPPmsg = (NewPlayerPositionMsg*)head;
+			if (change->type == NewPlayerPosition) {
+				std::cout << "NewPlayerPosition" << std::endl;
+ 
+				
+				int x, y;
+				
+				x = NPPmsg->pos.x;
+				y = NPPmsg->pos.y;
+				std::cout << "Player " << head->id << " is now at position x=" << x - 100 << " and y=" << y - 100 << std::endl;
+				field[x][y] = NPPmsg->msg.head.id;
+				std::string color;
+				switch (NPPmsg->msg.head.id) {
+
+				case 0:
+					color = "white";
+					break;
+
+				case 1:
+					color = "blue";
+					break;
+
+				case 2:
+					color = "green";
+					break;
+
+				case 3:
+					color = "red";
+					break;
+				case 4:
+					color = "yellow";
+					break;
+				case 5:
+					color = "magenta";
+					break;
+
+				case 6:
+					color = "orange";
+					break;
+				case 7:
+					color = "pink";
+					break;
+				case 8:
+					color = "cyan";
+					break;
+
+				}
+				std::string GUImsg;
+				GUImsg = std::to_string(x) + "," + std::to_string(y) + "," + color;
+				updateGUI(GUISock, ID, GUI, GUImsg);
+				
+				
+			}*/
+            /*
+			if (change->type == NewPlayer) {
+				std::cout << "NewPlayer" << std::endl;
+				
+				
+			}*/
+            /*
+			if (change->type == PlayerLeave) {
+				std::cout << "PlayerLeave" << std::endl;
+				
+				if (head->id == thisPlayerID) {
+					std::cout << "Disconnected from server" << std::endl;
+					return;
+				}
+				std::cout << "Player " << head->id << " left. Removing from board" << std::endl;
+				int *remove = getPos(head->id);
+				int x = *remove;
+				int y = *(remove +1);
+				std::cout << x << " . " << y << std::endl;
+				
+				
+				std::string GUImsg;
+				GUImsg = std::to_string(x) + "," + std::to_string(y) + ",white";
+				updateGUI(GUISock, ID, GUI, GUImsg);
+				field[x][y] = 0;
+			}*/
+
+		}
+	}
+
 
     void createJoinMsg()
     {
@@ -150,7 +306,11 @@ class ServerConnection
                 join.form = form;
 
                  memcpy((void*)sendMessage, (void*)&join, sizeof(join));
-                 send(TCPSocket,sendMessage,sizeof(sendMessage),0);
+                 int isent = send(TCPSocket,sendMessage,sizeof(sendMessage),0);
+                 if(isent == SOCKET_ERROR)
+                 {
+                     std::cout << "send() error " << WSAGetLastError() << std::endl;
+                 }
                  std::cout << "sending join msg" << std::endl;
     }
 
@@ -174,6 +334,15 @@ class ServerConnection
 
         event.event = msg;
         event.dir = posReq;
+
+        //copy the msg to the buffer
+        memcpy((void*)sendMessage, (void*)&event, sizeof(event));
+
+        int isent = send(TCPSocket,sendMessage,sizeof(sendMessage),0);
+        if(isent == SOCKET_ERROR)
+        {
+            std::cout << "send() error " << WSAGetLastError() << std::endl;
+        }
     }
 
 };
