@@ -154,4 +154,26 @@ class ServerConnection
                  std::cout << "sending join msg" << std::endl;
     }
 
+    void sendMoveMessage(int seqNr, int clientID, Coordinate posReq)
+    {
+        ZeroMemory(sendMessage, BUFLEN);
+
+        MoveEvent event;
+        EventMsg msg;
+
+        //Head decleration
+        MsgHead head;
+        head.length = sizeof(sendMessage);
+        head.id = clientID;
+        head.seq_no = seqNr;
+        MsgType type = Event;
+        head.type = type;
+
+        msg.head = head;
+        msg.type = Move;
+
+        event.event = msg;
+        event.dir = posReq;
+    }
+
 };

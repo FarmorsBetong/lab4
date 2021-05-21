@@ -17,6 +17,7 @@ Pyramid,
 Cone
 };
 
+
 struct Coordinate
 {
 int x;

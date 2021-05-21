@@ -33,9 +33,14 @@ using namespace std;
 Playground gameClient;
 
 bool gameStarted = false;
+
+int playerID;
+int seqNr;
 Coordinate pos;
 string playerColor;
 
+
+// test func
 void keyInput()
 {
     int c = 0;
@@ -48,7 +53,7 @@ void keyInput()
             case KEY_UP:
                 cout << "Up\n";
                 y = pos.y -1;
-                if(y > -1) 
+                if(y > -1)
                 {
                     pos.y = y;
                     gameClient.move(pos,playerColor);
@@ -57,7 +62,7 @@ void keyInput()
             case KEY_DOWN:
                 cout << "down\n";
                 y = pos.y + 1;
-                if(y < 100) 
+                if(y < 100)
                 {
                     pos.y = y;
                     gameClient.move(pos,playerColor);
@@ -66,7 +71,7 @@ void keyInput()
             case KEY_LEFT:
                 cout << "left\n";
                 x = pos.x -1;
-                if(x > -1) 
+                if(x > -1)
                 {
                     pos.x = x;
                     gameClient.move(pos,playerColor);
@@ -75,7 +80,7 @@ void keyInput()
             case KEY_RIGHT:
                 cout << "right\n";
                 x = pos.x + 1;
-                if(x < 100) 
+                if(x < 100)
                 {
                     pos.x = x;
                     gameClient.move(pos,playerColor);
@@ -86,14 +91,67 @@ void keyInput()
         }
     }
 }
+
+/*
+void sendChangePos()
+{
+    int c = 0;
+    int y;
+    int x;
+    while(1)
+    {
+        switch(c = getch())
+        {
+            case KEY_UP:
+                cout << "Up\n";
+                y = pos.y -1;
+                if(y > -1)
+                {
+                    pos.y = y;
+                    gameClient.move(pos,playerColor);
+                }
+                break;
+            case KEY_DOWN:
+                cout << "down\n";
+                y = pos.y + 1;
+                if(y < 100)
+                {
+                    pos.y = y;
+                    gameClient.move(pos,playerColor);
+                }
+                break;
+            case KEY_LEFT:
+                cout << "left\n";
+                x = pos.x -1;
+                if(x > -1)
+                {
+                    pos.x = x;
+                    gameClient.move(pos,playerColor);
+                }
+                break;
+            case KEY_RIGHT:
+                cout << "right\n";
+                x = pos.x + 1;
+                if(x < 100)
+                {
+                    pos.x = x;
+                    gameClient.move(pos,playerColor);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+*/
 int main()
 {
 
     gameClient.clearBoard();
-    playerColor = "red";
     pos.x = 3;
     pos.y = 3;
-    gameClient.placePlayer(pos,"red");
+    playerColor = "red";
+    gameClient.placePlayer(pos,playerColor);
     gameStarted = true;
 
     keyInput();
