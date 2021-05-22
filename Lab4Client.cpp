@@ -168,11 +168,15 @@ int main()
     ServerConnection con;
 
     //std::thread sendInfo(con.recieveInformation);
-    con.recieveInformation();
-    //con.sendMoveMessage(0,4,pos);
-    
+    //unsigned int myCounter = 0;
+    //DWORD myThreadID;
+	//HANDLE myHandle = CreateThread(0, 0, con.recieveInformation, &myCounter, 0, &myThreadID);
+
+    //CloseHandle(myHandle);
     //con.recieveInformation();
-    //std::thread first (con.);
+    //con.sendMoveMessage(0,4,pos);
+    //con.recieveInformation();
+    
 
     return 1;
 }

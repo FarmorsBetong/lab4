@@ -292,8 +292,8 @@ class ServerConnection
                 type = Join;    //enum msg tpe with value 0 ie join.
                 MsgHead head;
                 head.length = sizeof(join);
-                head.seq_no = 1;
-                head.id = 2;
+                head.seq_no = 0;
+                head.id = 0;
                 head.type = type;
 
                 ObjectDesc desc;

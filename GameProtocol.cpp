@@ -17,13 +17,6 @@ Pyramid,
 Cone
 };
 
-
-struct Coordinate
-{
-int x;
-int y;
-};
-
 enum MsgType
 {
 Join, // Client joining game at server
@@ -33,12 +26,55 @@ Event, // Information from clients to server
 TextMessage // Send text messages to one or all
 };
 
+enum ChangeType
+{
+NewPlayer,
+PlayerLeave,
+NewPlayerPosition
+};
+
+struct Coordinate
+{
+int x;
+int y;
+};
+
 struct MsgHead
 {
 unsigned int length; // Total length for whole message
 unsigned int seq_no; // Sequence number
 unsigned int id; // Client ID or 0;
 MsgType type; // Type of message
+};
+
+struct ChangeMsg
+{
+MsgHead head;
+ChangeType type;
+};
+
+struct NewPlayerMsg
+{
+ChangeMsg msg; //Change message header with new client id
+ObjectDesc desc;
+ObjectForm form;
+char name[MAXNAMELEN]; // nullterminated!, or empty
+Coordinate pos;
+};
+
+struct PlayerLeaveMsg
+{
+ChangeMsg msg; //Change message header with new client id
+};
+
+
+
+
+struct NewPlayerPositionMsg
+{
+ChangeMsg msg; //Change message header
+Coordinate pos; //New object position
+Coordinate dir; //New object direction
 };
 
 struct JoinMsg
@@ -72,3 +108,10 @@ struct TextMessageMsg // Optional at client side!!!
 MsgHead head;
 char text[1]; // NULL-terminerad array av chars.
 };
+
+struct LeaveMsg
+{
+MsgHead head;
+};
+
+

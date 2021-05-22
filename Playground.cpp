@@ -203,6 +203,7 @@ class Playground
 
             void placePlayer(Coordinate firstPos, string color)
             {
+                cout << "placing player on the map\n ";
                 char buf[BUFLEN];
                 pos.x = firstPos.x;
                 pos.y =firstPos.y;
