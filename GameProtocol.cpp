@@ -59,16 +59,12 @@ ChangeMsg msg; //Change message header with new client id
 ObjectDesc desc;
 ObjectForm form;
 char name[MAXNAMELEN]; // nullterminated!, or empty
-Coordinate pos;
 };
 
 struct PlayerLeaveMsg
 {
 ChangeMsg msg; //Change message header with new client id
 };
-
-
-
 
 struct NewPlayerPositionMsg
 {

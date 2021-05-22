@@ -2,6 +2,7 @@
 #define PORT 4445
 #define BUFLEN 512	//Max length of buffer
 #define LOOPBACK "127.0.0.1"
+#define MAX_NR_OF_PLAYERS 7
 
 
 #define WIN32_LEAN_AND_MEAN
@@ -44,8 +45,7 @@ class Playground
         WSADATA wsData;
         WORD version = MAKEWORD(2,2);
 
-
-        Coordinate pos;
+        Coordinate pos[MAX_NR_OF_PLAYERS];
         char buf[BUFLEN];
 
     public:
@@ -55,7 +55,7 @@ class Playground
             int wsOk = WSAStartup(version,&wsData);
             if(wsOk != 0)
             {
-                std::cout << "winsock startup failed" << std::endl;
+                cout << "winsock startup failed" << endl;
             }
 
             //setup address structure
@@ -147,9 +147,9 @@ class Playground
 
         // protocol to move character on the server board is x:y:color
 
-        void move(Coordinate newPos, string color)
+        void move(Coordinate newPos, string color, int id)
             {
-                string moveFrom =  to_string(pos.x) + ":" + to_string(pos.y) + ":" + "white";
+                string moveFrom =  to_string(pos[id].x) + ":" + to_string(pos[id].y) + ":" + "white";
 
                 //send message
                 if(sendto(sock, moveFrom.c_str() ,strlen(moveFrom.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)
@@ -166,7 +166,7 @@ class Playground
 
                 if(bytesIn == SOCKET_ERROR)
                 {
-                    std::cout << "Errorr rec from client " << WSAGetLastError << std::endl;
+                    cout << "Errorr rec from client " << WSAGetLastError << endl;
                     return;
                 }
 
@@ -196,18 +196,18 @@ class Playground
 
                 // print out recv msg
                 cout << "msg: " << buf << endl;
-                pos.x = newPos.x;
-                pos.y = newPos.y;
+                pos[id].x = newPos.x;
+                pos[id].y = newPos.y;
             }
 
 
-            void placePlayer(Coordinate firstPos, string color)
+            void placePlayer(Coordinate firstPos, string color, int id)
             {
                 cout << "placing player on the map\n ";
                 char buf[BUFLEN];
-                pos.x = firstPos.x;
-                pos.y =firstPos.y;
-                string place =  to_string(pos.x) + ":" + to_string(pos.y) + ":" + color;
+                pos[id].x = firstPos.x;
+                pos[id].y = firstPos.y;
+                string place =  to_string(pos[id].x) + ":" + to_string(pos[id].y) + ":" + color;
 
                 //send message
                 if(sendto(sock, place.c_str() ,strlen(place.c_str()), 0 , (struct sockaddr *)&server, slen) == SOCKET_ERROR)

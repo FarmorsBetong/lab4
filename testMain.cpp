@@ -10,6 +10,8 @@
 #define KEY_DOWN 80
 #define KEY_LEFT 75
 #define KEY_RIGHT 77
+#define L 108
+#define MAX_NR_OF_PLAYERS 7
 
 #include "GameProtocol.cpp"
 #include "Playground.cpp"
@@ -36,7 +38,7 @@ using namespace std;
                 *ptr = NULL,
                 serverHint;
 
-    //create send and recv buffers  
+    //create send and recv buffers
     char sendMessage[512];
     int sendlen = strlen(sendMessage)+1;
     char recvMessage[512];
@@ -53,12 +55,13 @@ using namespace std;
     int map[MAPSIZE][MAPSIZE];
 
     bool gameStarted = false;
+    bool quit = false;
 
     Playground gameClient;
 
-#pragma comment (lib, "ws2_32.lib")
+//#pragma comment (lib, "ws2_32.lib")
 
-
+/*
 Coordinate getGridPos(int id)
 {
     for(int x = 0; x < MAPSIZE; x++)
@@ -74,15 +77,14 @@ Coordinate getGridPos(int id)
         }
     }
 }
+*/
 
-
-void myThread(void* data)
+void recvMessages(void* data)
 {
-        char recvBuf[BUFLEN];
         while(true)
         {
-            ZeroMemory(recvBuf,BUFLEN);
-            int iRecieve = recv(TCPSocket,recvBuf,BUFLEN,0);
+            ZeroMemory(recvMessage,BUFLEN);
+            int iRecieve = recv(TCPSocket,recvMessage,BUFLEN,0);
             if(iRecieve == SOCKET_ERROR)
             {
                 std::cout << "recv() error " << WSAGetLastError() << std::endl;
@@ -90,15 +92,15 @@ void myThread(void* data)
             else
             {
                 //remove the struct from the buffer
-                MsgHead* head = (MsgHead*)recvBuf;
-                std::cout << "Got packet with playerID: " << head->id << std::endl;
+                MsgHead* head = (MsgHead*)recvMessage;
+                cout << "Got packet with playerID: " << head->id << endl;
                 cout << "seq_nr : " << head->seq_no << endl;
                 seq_nr = head->seq_no;
                 cout << "type : " << head->type << endl;
                 // when player joins setup id
-                if (head->type == Join) 
+                if (head->type == Join)
                 {
-                    if (thisPlayerID == 0) 
+                    if (thisPlayerID == 0)
                     {
                         cout << "Player join the game\n";
                         thisPlayerID = head->id;
@@ -111,19 +113,17 @@ void myThread(void* data)
                     ChangeMsg* change = (ChangeMsg*)head;
                     NewPlayerPositionMsg* NewPmsg = (NewPlayerPositionMsg*)head;
 
+                    //ID of msg
+                    int ID = NewPmsg->msg.head.id;
+
                     if(change->type == NewPlayerPosition)
                     {
                         cout << "New player position msg\n";
 
                         cout << "position got back from server " << NewPmsg->pos.x << ":" << NewPmsg->pos.y << "\n";
 
-                        int x, y;
-                        pos.x = NewPmsg->pos.x;
-                        pos.y = NewPmsg->pos.y;
-
-                        switch (NewPmsg->msg.head.id) 
+                        switch (ID) 
                         {
-
                             case 0:
                                 color = "blue";
                                 break;
@@ -155,7 +155,10 @@ void myThread(void* data)
                                 break;
                             }
 
-                            gameClient.move(pos,color);
+                            pos.x = NewPmsg->pos.x;
+                            pos.y = NewPmsg->pos.y;
+
+                            gameClient.move(pos, color, ID);
                     }
 
 
@@ -163,45 +166,12 @@ void myThread(void* data)
                     {
                         cout << "New Player game started \n";
 
-                        switch (NewPmsg->msg.head.id) 
-                        {
-
-                            case 0:
-                                color = "blue";
-                                break;
-
-                            case 1:
-                                color = "green";
-                                break;
-
-                            case 2:
-                                color = "red";
-                                break;
-                            case 3:
-                                color = "yellow";
-                                break;
-                            case 4:
-                                color = "black";
-                                break;
-
-                            case 5:
-                                color = "orange";
-                                break;
-                            case 6:
-                                color = "pink";
-                                break;
-                            case 7:
-                                color = "grey";
-                                break;
-                            default:
-                                break;
-                        }
                         gameStarted = true;
                     }
 
                     if(change->type == PlayerLeave)
                     {
-                        cout << "player " << head->id << " is leaving";
+                        cout << "player " << head->id << " is leaving\n";
                     }
                 }
 
@@ -216,8 +186,8 @@ void createJoinMsg()
                 type = Join;    //enum msg tpe with value 0 ie join.
                 MsgHead head;
                 head.length = sizeof(join);
-                head.seq_no = 1;
-                head.id = 2;
+                head.seq_no = 0;
+                head.id = 0;
                 head.type = type;
 
                 ObjectDesc desc;
@@ -239,12 +209,13 @@ void createJoinMsg()
     }
 
 
+
+
     void sendMoveMessage(Coordinate posReq)
     {
         cout << "sendMove() runs\n";
-      
-        ZeroMemory(sendMessage, BUFLEN);
 
+        ZeroMemory(sendMessage, BUFLEN);
         MoveEvent moveMsg;
         moveMsg.pos.x = posReq.x;
         moveMsg.pos.y = posReq.y;
@@ -253,7 +224,7 @@ void createJoinMsg()
         moveMsg.event.head.id = thisPlayerID;
         moveMsg.event.type = Move;
         moveMsg.event.head.length = sizeof(moveMsg);
-        moveMsg.event.head.seq_no = seq_nr;
+        moveMsg.event.head.seq_no = seq_nr +1;
 
 
         //copy the msg to the buffer
@@ -267,6 +238,27 @@ void createJoinMsg()
 
         cout << "new pos has been sent\n";
     }
+
+
+    void sendLeave() {
+
+	LeaveMsg leave;
+	leave.head.id = thisPlayerID;
+	leave.head.seq_no = seq_nr+1;
+	leave.head.type = Leave;
+	leave.head.length = sizeof(leave);
+	memcpy((void*)sendMessage, (void*)&leave, sizeof(leave));
+
+	int sent = send(TCPSocket, sendMessage, sizeof(sendMessage), 0);
+
+    if(sent == SOCKET_ERROR)
+    {
+        cout << "send leave message failed";
+        WSACleanup();
+    }
+    gameClient.clearBoard();
+    quit = true;
+}
 
 
     void keyInput(void* data)
@@ -284,18 +276,18 @@ void createJoinMsg()
                     y = pos.y -1;
                     if(y > -1)
                     {
-                        newPos.x = pos.x;
-                        newPos.y = y;
+                        newPos.x = 0;
+                        newPos.y = -1;
                         sendMoveMessage(newPos);
                     }
                     break;
                 case KEY_DOWN:
                     cout << "down\n";
                     y = pos.y + 1;
-                    if(y < 100)
+                    if(y < 200)
                     {
-                        newPos.x = pos.x;
-                        newPos.y = y;
+                        newPos.x = 0;
+                        newPos.y = 1;
                         sendMoveMessage(newPos);
                     }
                     break;
@@ -304,21 +296,26 @@ void createJoinMsg()
                     x = pos.x -1;
                     if(x > -1)
                     {
-                        newPos.x = x;
-                        newPos.y = pos.y;
+                        newPos.x = -1;
+                        newPos.y = 0;
                         sendMoveMessage(newPos);
                     }
                     break;
                 case KEY_RIGHT:
                     cout << "right\n";
                     x = pos.x + 1;
-                    if(x < 100)
+                    if(x < 200)
                     {
-                        newPos.x = x;
-                        newPos.y = pos.y;
+                        newPos.x = 1;
+                        newPos.y = 0;
                         sendMoveMessage(newPos);
                     }
                     break;
+                case L:
+                    cout << "Leave req \n";
+                    sendLeave();
+                    break;
+
                 default:
                     break;
             }
@@ -407,15 +404,11 @@ int main()
 
         HANDLE myHandleRecv, myHandleSend;
 
-        myHandleRecv =(HANDLE)_beginthread(&myThread,0,0);
+        myHandleRecv =(HANDLE)_beginthread(&recvMessages,0,0);
 
         myHandleSend = (HANDLE)_beginthread(&keyInput,0,0);
-        //DWORD myThreadID;
-        //DWORD myThreadID2;
-        //HANDLE myHandle = CreateThread(0, 0, myThread, 0, 0, 0);
-        //HANDLE myHandle2 = CreateThread(0, 0, sendMoveMessage, 0, 0, 0);
 
-        while(true)
+        while(!quit)
         {
 
         }
