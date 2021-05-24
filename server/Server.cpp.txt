@@ -1,0 +1,425 @@
+//Author Robin Olofsson, roblof-8 . 2021-05-10
+
+#include "Server.h"
+#include <iostream>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <string>
+#include <errno.h>
+#include <sys/time.h>
+//#include <unordered_map>
+#include <typeinfo>
+#include <queue>
+
+#define BUFLEN 512
+#define PORT 49152
+#define MAPSIZE 201
+#define MAXCLIENTS 7
+
+using namespace std;
+
+int client_sockets[MAXCLIENTS][4]; // array that stores client socket {ID,FD, x,y}
+int map[MAPSIZE][MAPSIZE];
+
+
+
+int main()
+{
+
+	//Variables
+	int clientSocket, PlayerID, listeningSocket, maxSock, sockDescriptor, bytesReceived ;	
+
+	
+    	char sendBuf[BUFLEN];
+	char recvBuf[BUFLEN];
+
+	
+	//hint
+	sockaddr_in = hints;
+
+	//setup move event queue
+	std::queue <MoveEvent> moveEventQueue;
+
+	//read file descrptor
+	fd_set read;
+
+
+	//init client sockets
+
+	
+
+	//Create listning socket IPv4, TCP, IP
+	if(listeningSocket = socket(AF_INET, SOCK_STREAM,0) == -1)
+	{
+		cout << "Can't create listening socket, error value : " << errno << endl;
+		return -1;
+	}
+
+	
+	//Create socket hint structure
+	hints.sin_family = AF_INET;
+	hints.sin_port = htons(PORT) //host to network endians
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	
+	//setsocket options
+	
+
+	//bind socket
+	if(bind(listeningSocket, (sockaddr *)&hints, sizesof(hints)) != 0)
+	{
+		printf("Failed to bind socket %d", errno);
+		return -1;
+	}
+	printf("Server listening");
+	
+
+	//Setup socket to listen 
+	if(listen(listeningSocket, MAXCLIENTS) != 0)
+	{
+		printf("Listen() failed");
+		return -1;
+	}
+
+	//hint strucutre for client
+	sockaddr_in client;
+	addrlen = sizeof(hint);
+	
+    
+ 	
+    	char host[NI_MAXHOST];      // Client's remote name
+    	char service[NI_MAXSERV];   // Service (i.e. port) the client is connect on
+ 
+
+	std::fill_n(host, NI_MAXHOST, 0);
+    	std::fill_n(service, NI_MAXSERV, 0);
+   
+	while(true)
+	{
+		FD_ZERO(&readfds);
+        
+        	//add the listening sock to the set
+        	FD_SET(listeningSocket, &read);
+        	maxSock = listeningSocket;
+
+       
+        	//add the clients to the set
+        	for(int i = 1; i < MAXCLIENTS; i++)
+		{
+
+            		//the socket filedescriptor gets put in the set
+            		sockDescriptor = client_sockets[i][1];
+            		if(sockDescriptor > 0 )
+			{
+               			FD_SET(sockDescriptor, &read); 
+            		} 
+            		if(sockDescriptor > maxSock)
+			{ //this is for the select function later, need the higfhest desc number
+                		maxSock = sockDescriptor;
+            		} 
+       		}//end of for
+
+		//wait for an acitivity	
+		
+		activity = select(maxSock + 1, &read, NULL, NULL, NULL);
+       		cout << "activity nr: " << activity << endl;
+        	if((activity < 0) && (errno != EINTR))
+		{
+            		cout << "activity error" << endl;
+        	}
+
+		 //JOIN EVENT
+        	if(FD_ISSET(listeningSock, &read))
+		{
+            		clientSock = accept(listeningSock, (sockaddr*)&client, &clientSize);
+            		if(clientSock < 0)
+			{
+                		cout << "accept error" << endl;
+                		return -1;
+            		}
+            		 //add a new socket to the list if there is space
+            		for(int i = 1; i< MAXCLIENTS; i++)
+			{
+                		if(client_sockets[i][1] == 0)
+				{
+                    			int fd;                   
+                    			client_sockets[i][1] = clientSocket;
+                    			fd = client_sockets[i][1];
+                    			playerID = i;
+                    			cout << "adding id " << i << " to the socket list" << endl;
+                    			fill_n(recvBuf, BUFLEN, 0);
+                    			bytesReceived = recv(fd, recvBuf, sizeof(recvBuf), 0);
+                    			MsgHead* head = (MsgHead*)recvBuf;
+                    			cout << "Join, ID = " << playerID << endl;
+                    			JoinMsg join;
+                    			join.head.type = Join;         
+
+                    			cout << "sd is " << client_sockets[i][1] << ". id is " << client_sockets[i][0] << endl;           
+
+                   			join.head.id = playerID;
+                    			join.head.seq_no = head->seq_no + 1;
+                    			join.head.length = sizeof(join);
+                   			memcpy((void*)sendBuf, (void*)&join, sizeof(join));
+                    			send(fd, sendBuf, sizeof(sendBuf), 0);
+                    			cout << "sending Join msg" << endl;
+
+                    			fill_n(sendBuf, BUFLEN, 0);
+					
+
+					//start of new player message sent to client
+                    			NewPlayerMsg NPmsg;
+                    			NPmsg.msg.type = NewPlayer;
+                    			NPmsg.msg.head.seq_no = head->seq_no + 1;	//increase the latest seq_no
+                    			NPmsg.msg.head.id = playerID;
+                    			NPmsg.msg.head.type = Change;
+                    			NPmsg.msg.head.length = sizeof(NPmsg);
+
+                    			memcpy((void*)sendBuf, (void*)&NPmsg, sizeof(NPmsg));
+	
+		    			//go through the fd list and send out new player messages to all connected clients.
+                    			for(int i = 1; i< MAXCLIENTS; i++)
+					{
+                        			if(client_sockets[i][1] != 0)
+						{
+                            				fd = client_sockets[i][1];
+                            				send(fd, sendBuf, sizeof(sendBuf), 0);
+                            				cout << "Sending NewPlayer to  playerID/sd " << playerID << "/" << fd << endl;
+                            
+                        			}
+                    			}
+					
+					//reset send buffer
+                    			fill_n(sendBuf, BUFLEN, 0);
+
+
+					// after new player msg send new player position message
+                   			NewPlayerPositionMsg NPPmsg;               
+                    			NPPmsg.msg.type = NewPlayerPosition;                
+                    			NPPmsg.msg.head.seq_no = head->seq_no + 1;               
+                    			NPPmsg.msg.head.id = playerID;               
+                    			NPPmsg.msg.head.type = Change;
+                                  
+                    			NPPmsg.msg.head.length = sizeof(NPPmsg);
+                       
+                    
+                    			static int startPos[] = {0,0};
+				
+					//check wether the start position is occupied
+                    			while(map[startPos[0]][startPos[1]] != 0)
+					{
+                        			startPos[0]++;
+                        			if(startPos[0] >198)
+						{
+                            				startPos[0] = 0;
+                            				startPos[1]++;
+                            				if(startPos[1] > 198)
+							{
+                                				startPos[1] = 0;
+                            				}
+                        			}
+                    			}
+
+					//set the pos of the msg
+                    			NPPmsg.pos.x = startPos[0];
+                    			NPPmsg.pos.y = startPos[1];
+                    			memcpy((void*)sendBuf, (void*)&NPPmsg, sizeof(NPPmsg));
+
+					//insert the player onto to map of the board
+                    			//insertToField(field, playerID,startPos,0,0);
+					
+					//loop out the msgs to all the clients
+                   			 for(int i = 1; i< MAXCLIENTS; i++)
+					{
+                        			if(client_sockets[i][1] != 0)
+						{
+                            				fd = client_sockets[i][1];
+                            				send(fd, sendBuf, sizeof(sendBuf), 0);
+                            				cout << "Sending Move to  playerID " << playerID  << endl;
+                        			}
+                    			}
+                    			//reset the send buffer
+                   			 fill_n(sendBuf, BUFLEN, 0);
+                    
+
+
+                    			break;
+                		}//if client stop is empty add client
+            		}//for end for all the clients spots in the list
+
+            		continue;
+        	}//end of if join event
+
+
+		for(int i = 1; i < MAXCLIENTS; i++)
+		{
+            		socketDescriptor = client_sockets[i][1];
+            
+        
+            		if(FD_ISSET(socketDescriptor, &read))
+			{
+                		fill_n(recvBuf, BUFLEN, 0);
+                		bytesReceived = recv(sd, recvBuf, sizeof(recvBuf), 0);
+				
+
+
+				//look at the head of the msgs and determine what type it is
+                		MsgHead* head = (MsgHead*)recvBuf;
+
+                		switch(head->type)
+				{
+                			case 1:
+                    				cout << "Leave" << std::endl;
+                    				playerID = head->id;
+                    				if(playerID == 0)
+						{
+                        				break;
+                    				}
+
+                    				cout << "client ID: " << playerID << endl;
+                    				socketDescriptor = client_sockets[playerID][1];                    
+                    				int *pos;
+                    				//get position
+						//pos = getPos(field, playerID);
+
+						//create leave msg
+                    				PlayerLeaveMsg leave;
+                    				leave.msg.type = PlayerLeave;
+                    				leave.msg.head.id = playerID;
+                    				leave.msg.head.length = sizeof(leave);
+                    				memcpy((void*)sendBuf, (void*)&leave, sizeof(leave));
+                    				for(int i = 1; i< MAXCLIENTS; i++)
+						{
+                            				int fd;
+                            				if(client_sockets[i][1] != 0)
+							{
+                               					fd = client_sockets[i][1];
+                                				send(fd, sendBuf, sizeof(sendBuf), 0);
+
+                            				}
+
+
+                        			}
+	
+                    				fill_n(sendBuf, BUFLEN, 0);
+                    
+                    				client_sockets[playerID][1] = 0;
+                    				//insertToField(field, 0, pos, 0, 0 );
+                    				getpeername(socketDescriptor, (struct sockaddr*)&hints, (socklen_t*)&addrlen);
+                    				cout << "Someone disconnected with the ip: " << inet_ntoa(hint.sin_addr) << " and port " << ntohs(hint.sin_port) << endl;
+                          
+                    				close(socketDescriptor);                        
+                    				client_sockets[playerID][1] = 0;
+                    				break;
+
+                			case 3:
+                    				cout << "Event" << endl;
+                    	
+                    				MoveEvent* ME = (MoveEvent*)recvBuf;
+
+                    				moveQueue.push(ME);
+                    				break;
+            			}
+
+            			while(moveEventQueue.size() > 0){
+
+                		MoveEvent* ME = moveEventQueue.front();
+                		moveEventQueue.pop();
+                		EventMsg* event = (EventMsg*)ME;
+
+                		if(event->type == Move)
+				{
+                        		cout << "Move" << endl;
+                        		//MoveEvent* moveEvent = (MoveEvent*)recvBuf;
+                        		int x = ME->pos.x;
+                        		int y = ME->pos.y;
+                        		if(x > 1 || y > 1 || x < -1 || y < -1)
+					{
+                            			continue;
+                        		}
+                        		playerID = head->id;
+                        
+                        		int *pos;
+                        		pos = getPos(field, playerID);
+                        		cout << "playerID: " << playerID << endl;
+                        		if(x + *(pos+0) < 0 || y + *(pos+1) < 0 || x + *(pos+0) > 200 || y + *(pos+1)> 200)
+					{
+                            			break;
+                        		}
+
+                        		int newPos[2] = {*(pos+0)+x, *(pos+1)+y};
+                        		if(field[newPos[0]][newPos[1]] != 0)
+					{
+                            			break;
+                        		}
+
+                        
+			// was here working --------------------------------
+                        NewPlayerPositionMsg NPPmsg;                  
+                        NPPmsg.msg.type = NewPlayerPosition;   
+                        NPPmsg.msg.head.seq_no = head->seq_no + 1; 
+                        NPPmsg.msg.head.id = head->id;            
+                        NPPmsg.msg.head.type = Change;
+                                                    
+                        //send a message of where the players new location is
+                        NPPmsg.pos.x = *(pos+0)+x;
+                        NPPmsg.pos.y = *(pos+1)+y;              
+                        NPPmsg.msg.head.length = sizeof(NPPmsg);
+                        std::cout << "Sending Move " << "x = " << NPPmsg.pos.x - 100 << " , y = " << NPPmsg.pos.y - 100 << ". The player " << head->id << " moved" << std::endl;
+                        memcpy((void*)sendBuf, (void*)&NPPmsg, sizeof(NPPmsg));
+                        insertToField(field, playerID, newPos, x, y);
+                        for(int i = 1; i< MAXCLIENTS; i++){
+                            int fd;
+                            if(client_sockets[i][1] != 0){
+                                fd = client_sockets[i][1];
+                                std::cout << "Sending Move to  playerID " << client_sockets[i][0] <<  std::endl;
+                                send(fd, sendBuf, sizeof(sendBuf), 0);
+                            }
+                        }
+                        
+                        
+
+
+                        std::fill_n(sendBuf, BUFLEN, 0);
+                        
+
+                        //send a message to paint over the previous location
+                        NewPlayerPositionMsg NPP2msg;
+                        NPP2msg.msg.type = NewPlayerPosition;  
+                        NPP2msg.pos.x = *(pos+0);
+                        NPP2msg.pos.y = *(pos+1);
+                        NPP2msg.msg.head.id = 0;
+                        NPP2msg.msg.head.type = Change;
+                        NPP2msg.msg.head.seq_no = head->seq_no + 2;              
+                        NPP2msg.msg.head.length = sizeof(NPP2msg);
+                        memcpy((void*)sendBuf, (void*)&NPP2msg, sizeof(NPP2msg));
+                        for(int i = 1; i< MAXCLIENTS; i++){
+                            int fd;
+                            if(client_sockets[i][1] != 0){
+                                fd = client_sockets[i][1];
+                                std::cout << "Sending Move to  playerID " << client_sockets[i][0] << std::endl;
+                                send(fd, sendBuf, sizeof(sendBuf), 0);
+                            }
+                        }
+
+                        //send(clientSock, sendBuf, sizeof(sendBuf), 0);
+                                           
+                        std::fill_n(sendBuf, BUFLEN, 0);
+                        
+                    }
+
+
+
+
+
+
+	
+	}// end of while()
+ 
+   
+	
+
+
+}
