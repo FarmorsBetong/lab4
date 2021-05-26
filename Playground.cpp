@@ -120,7 +120,10 @@ class Playground
             }
         }
 
-        // Clears the board
+        /**
+         * @brief  clearBoard() clears the board by sending clear bord msg to GUI client
+         * 
+         */
         void clearBoard()
         {
             string clear = "clear";
@@ -145,7 +148,13 @@ class Playground
                 cout << "msg: " << buf << endl;
         }
 
-        // protocol to move character on the server board is x:y:color
+        /**
+         * @brief  move() takes in postion and color (user ID) and user id to send 2 msgs to the GUI client.
+         * first msg is to remove current position and other is to paint the new position.
+         * follow protocol : to move character on the server board is x:y:color
+         * 
+         */
+        
 
         void move(Coordinate newPos, string color, int id)
             {
@@ -200,7 +209,14 @@ class Playground
                 pos[id].y = newPos.y;
             }
 
-
+            /**
+             * @brief placePlayer() is used to set the location of the player on the GUI board, once it 
+             * start playing.
+             * 
+             * @param firstPos pos of the player
+             * @param color color of the player
+             * @param id  id of the player
+             */
             void placePlayer(Coordinate firstPos, string color, int id)
             {
                 cout << "placing player on the map\n ";
@@ -229,12 +245,11 @@ class Playground
                 // print out recv msg
                 cout << "msg: " << buf << endl;
             }
-            /*
             // closes the socket and and cleansup winsock
             void closeSocket()
             {
-                closeSocket(sock);
+                closesocket(sock);
                 WSACleanup();
                 return;
-            }*/
+            }
 };

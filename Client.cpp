@@ -57,6 +57,7 @@ using namespace std;
     bool gameStarted = false;
     bool quit = false;
 
+    //GUI client
     Playground gameClient;
 
 //#pragma comment (lib, "ws2_32.lib")
@@ -78,6 +79,12 @@ Coordinate getGridPos(int id)
     }
 }
 */
+
+/**
+ * @brief  recv() recieves messages from server, intepreter them by the protocol that is set between them  
+ * and acts acording to it. The msgses are : New player, Change player position, or leave. Thread 1 calls this function
+ * @param data 
+ */
 
 void recvMessages(void* data)
 {
@@ -125,7 +132,7 @@ void recvMessages(void* data)
                         switch (ID) 
                         {
                             case 0:
-                                color = "blue";
+                                color = "white";
                                 break;
 
                             case 1:
@@ -139,7 +146,7 @@ void recvMessages(void* data)
                                 color = "yellow";
                                 break;
                             case 4:
-                                color = "magenta";
+                                color = "black";
                                 break;
 
                             case 5:
@@ -149,7 +156,7 @@ void recvMessages(void* data)
                                 color = "pink";
                                 break;
                             case 7:
-                                color = "cyan";
+                                color = "grey";
                                 break;
                             default:
                                 break;
@@ -174,7 +181,6 @@ void recvMessages(void* data)
                         cout << "player " << head->id << " is leaving\n";
                     }
                 }
-
             }
         }
 }
@@ -239,6 +245,12 @@ void createJoinMsg()
         cout << "new pos has been sent\n";
     }
 
+    /**
+     * @brief  sendLeave() gets called if the player wants to leave the game.
+     * The function creates a leave msg for the server and sends it, clears the board client GUI,
+     * and turn the game flag off and quit.
+     * 
+     */
 
     void sendLeave() {
 
@@ -257,10 +269,17 @@ void createJoinMsg()
         WSACleanup();
     }
     gameClient.clearBoard();
+    gameClient.closeSocket();
+    gameStarted = false;
     quit = true;
 }
 
-
+    /**
+     * @brief KeyInput() acts on user input from keyboard. Depending on the input, it creates and sends
+     * move position msgs to the server and client GUI. If the player wants to leave it calls leave funcs. Thread 2 runs this function.
+     * 
+     * @param data 
+     */
     void keyInput(void* data)
     {
         int c = 0;
@@ -284,7 +303,7 @@ void createJoinMsg()
                 case KEY_DOWN:
                     cout << "down\n";
                     y = pos.y + 1;
-                    if(y < 200)
+                    if(y < 201)
                     {
                         newPos.x = 0;
                         newPos.y = 1;
@@ -304,7 +323,7 @@ void createJoinMsg()
                 case KEY_RIGHT:
                     cout << "right\n";
                     x = pos.x + 1;
-                    if(x < 200)
+                    if(x < 201)
                     {
                         newPos.x = 1;
                         newPos.y = 0;
@@ -398,10 +417,6 @@ int main()
 
         gameClient.clearBoard();
 
-        unsigned int myCounter = 0;
-        unsigned int myCounter2 = 0;
-
-
         HANDLE myHandleRecv, myHandleSend;
 
         myHandleRecv =(HANDLE)_beginthread(&recvMessages,0,0);
@@ -412,5 +427,7 @@ int main()
         {
 
         }
+        closesocket(TCPSocket);
+        WSACleanup();
         return 0;
 }
